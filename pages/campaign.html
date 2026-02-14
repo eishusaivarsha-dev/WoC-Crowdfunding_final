@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Campaign Details</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;900&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Inter}
+body{
+background:linear-gradient(180deg,#f8fafc,#eef2f7);
+color:#111;
+min-height:100vh;
+}
+
+/* NAVBAR */
+
+.navbar{
+position:fixed;
+top:0;width:100%;
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:18px 60px;
+background:rgba(255,255,255,.85);
+backdrop-filter:blur(14px);
+z-index:100;
+}
+
+.logo{font-weight:900;color:#16a34a;font-size:22px}
+
+.nav-links{
+display:flex;gap:28px;align-items:center;
+}
+
+.nav-links a{
+text-decoration:none;color:#444;font-weight:500;
+}
+
+.login-btn{
+padding:10px 22px;
+border-radius:999px;
+border:none;
+background:#16a34a;
+color:white;
+font-weight:600;
+cursor:pointer;
+}
+
+/* PAGE WRAPPER */
+
+.campaign-page-container{
+max-width:1000px;
+margin:140px auto 80px;
+padding:50px;
+background:white;
+border-radius:28px;
+box-shadow:0 30px 80px rgba(0,0,0,.08);
+animation:fadeUp .8s ease;
+}
+
+/* HEADER */
+
+#cTitle{
+font-size:42px;
+font-weight:900;
+margin-bottom:10px;
+}
+
+#cDesc{
+font-size:18px;
+color:#555;
+line-height:1.7;
+margin-bottom:25px;
+}
+
+/* META */
+
+.meta-row{
+display:flex;
+gap:30px;
+flex-wrap:wrap;
+font-size:14px;
+color:#555;
+margin-bottom:30px;
+}
+
+/* PROGRESS */
+
+.progress-bar{
+height:14px;
+background:#e5e7eb;
+border-radius:999px;
+overflow:hidden;
+margin-bottom:10px;
+}
+
+.progress{
+height:14px;
+background:linear-gradient(90deg,#16a34a,#4ade80);
+width:0;
+transition:width 1.2s ease;
+}
+
+.amount-row{
+display:flex;
+justify-content:space-between;
+font-size:15px;
+color:#444;
+margin-bottom:25px;
+}
+
+/* DONATION BOX */
+
+.donate-box{
+margin-top:30px;
+padding:30px;
+border-radius:22px;
+background:rgba(255,255,255,.6);
+backdrop-filter:blur(14px);
+box-shadow:0 20px 60px rgba(0,0,0,.1);
+display:flex;
+gap:16px;
+align-items:center;
+animation:fadeUp 1s ease;
+}
+
+.donate-box input{
+flex:1;
+padding:14px;
+border-radius:12px;
+border:1px solid #ccc;
+font-size:16px;
+}
+
+.donate-box button{
+padding:14px 28px;
+border:none;
+border-radius:14px;
+background:#16a34a;
+color:white;
+font-weight:700;
+cursor:pointer;
+transition:.2s;
+}
+
+.donate-box button:hover{
+transform:scale(1.05);
+box-shadow:0 14px 40px rgba(22,163,74,.35);
+}
+
+/* LEDGER */
+
+.ledger{
+margin-top:50px;
+}
+
+.ledger h3{
+font-size:22px;
+margin-bottom:18px;
+}
+
+.tx-card{
+background:#f8fafc;
+padding:20px;
+border-radius:18px;
+margin-bottom:14px;
+box-shadow:0 10px 30px rgba(0,0,0,.05);
+animation:fadeUp .6s ease;
+}
+
+.tx-card p{
+font-size:14px;
+margin:4px 0;
+color:#444;
+}
+
+.hash{
+font-size:11px;
+word-break:break-all;
+color:#777;
+}
+
+@keyframes fadeUp{
+from{opacity:0;transform:translateY(20px)}
+to{opacity:1;transform:translateY(0)}
+}
+</style>
+</head>
+
+<body>
+
+<nav class="navbar">
+<div class="logo">Crowdfund</div>
+<div class="nav-links">
+<a href="../index.html">Home</a>
+<a href="create.html">Create</a>
+<a href="dashboard.html">Dashboard</a>
+<button class="login-btn">Login</button>
+</div>
+</nav>
+
+<div class="campaign-page-container">
+
+<h2 id="cTitle">Campaign Title</h2>
+<p id="cDesc">Campaign description</p>
+
+<div class="meta-row">
+<span><strong>Category:</strong> <span id="campCategory">---</span></span>
+<span><strong>Deadline:</strong> <span id="campDeadline">---</span></span>
+</div>
+
+<div class="progress-bar">
+<div class="progress" id="campProgress"></div>
+</div>
+
+<div class="amount-row">
+<span>₹<strong id="campRaised">0</strong> raised</span>
+<span>Goal: ₹<strong id="campTarget">0</strong></span>
+</div>
+
+<div class="donate-box">
+<input id="donateAmount" type="number" placeholder="Enter donation amount">
+<button id="donateBtn">Donate</button>
+</div>
+
+<div class="ledger">
+<h3>Public Transaction Log</h3>
+<div id="transactionLog"></div>
+</div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<script src="../app.js"></script>
+
+</body>
+</html>
+

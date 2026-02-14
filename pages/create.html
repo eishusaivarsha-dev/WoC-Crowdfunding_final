@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Create Campaign</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;900&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Inter}
+body{
+min-height:100vh;
+background:linear-gradient(135deg,#ecfdf5,#dcfce7,#bbf7d0);
+overflow-x:hidden;
+}
+
+/* animated background blobs */
+
+.bg-blob{
+position:fixed;
+width:500px;
+height:500px;
+border-radius:50%;
+filter:blur(120px);
+opacity:.35;
+animation:float 18s infinite linear;
+z-index:-1;
+}
+
+.blob1{background:#16a34a;top:-120px;left:-120px;}
+.blob2{background:#4ade80;bottom:-120px;right:-120px;animation-duration:22s;}
+.blob3{background:#86efac;top:40%;left:60%;animation-duration:26s;}
+
+@keyframes float{
+0%{transform:translate(0,0)}
+50%{transform:translate(80px,-60px)}
+100%{transform:translate(0,0)}
+}
+
+/* NAV */
+
+.navbar{
+position:fixed;
+top:0;
+width:100%;
+padding:20px 60px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+background:rgba(255,255,255,.6);
+backdrop-filter:blur(16px);
+z-index:100;
+}
+
+.logo{
+font-weight:900;
+color:#16a34a;
+font-size:22px;
+}
+
+.nav-links{
+display:flex;
+gap:30px;
+align-items:center;
+}
+
+.nav-links a{
+text-decoration:none;
+color:#333;
+font-weight:500;
+transition:.2s;
+}
+
+.nav-links a:hover{
+color:#16a34a;
+}
+
+.login-btn{
+padding:10px 22px;
+border:none;
+border-radius:999px;
+background:#16a34a;
+color:white;
+font-weight:600;
+cursor:pointer;
+transition:.2s;
+}
+
+.login-btn:hover{
+transform:scale(1.05);
+box-shadow:0 12px 30px rgba(22,163,74,.35);
+}
+
+/* CREATE CARD */
+
+.create-container{
+max-width:720px;
+margin:140px auto;
+padding:50px;
+border-radius:24px;
+background:rgba(255,255,255,.7);
+backdrop-filter:blur(20px);
+box-shadow:0 40px 80px rgba(0,0,0,.1);
+animation:fadeUp 1s ease;
+}
+
+.create-container h2{
+font-size:36px;
+margin-bottom:30px;
+text-align:center;
+}
+
+/* FORM */
+
+form{
+display:flex;
+flex-direction:column;
+gap:18px;
+}
+
+label{
+font-weight:600;
+color:#333;
+}
+
+input,textarea{
+padding:14px;
+border-radius:14px;
+border:1px solid #ddd;
+font-size:16px;
+transition:.2s;
+background:white;
+}
+
+input:focus,textarea:focus{
+outline:none;
+border-color:#16a34a;
+box-shadow:0 0 0 3px rgba(22,163,74,.15);
+}
+
+textarea{resize:none;height:120px}
+
+/* button */
+
+.create-btn{
+margin-top:20px;
+padding:18px;
+border:none;
+border-radius:16px;
+background:#16a34a;
+color:white;
+font-size:16px;
+font-weight:700;
+cursor:pointer;
+transition:.2s;
+}
+
+.create-btn:hover{
+transform:scale(1.03);
+box-shadow:0 15px 40px rgba(22,163,74,.35);
+}
+
+/* animation */
+
+@keyframes fadeUp{
+from{opacity:0;transform:translateY(40px)}
+to{opacity:1;transform:translateY(0)}
+}
+
+/* responsive */
+
+@media(max-width:700px){
+.create-container{margin:120px 20px;padding:30px}
+.navbar{padding:20px}
+}
+</style>
+</head>
+
+<body>
+
+<div class="bg-blob blob1"></div>
+<div class="bg-blob blob2"></div>
+<div class="bg-blob blob3"></div>
+
+<nav class="navbar">
+<div class="logo">Crowdfund</div>
+<div class="nav-links">
+<a href="../index.html">Home</a>
+<a href="create.html">Create</a>
+<a href="dashboard.html">Dashboard</a>
+<button class="login-btn" onclick="openAuthModal()">Login</button>
+</div>
+</nav>
+
+<div class="create-container">
+
+<h2>Create a New Campaign</h2>
+
+<form id="createCampaignForm">
+
+<label>Title</label>
+<input id="title" required>
+
+<label>Description</label>
+<textarea id="description" required></textarea>
+
+<label>Target Amount</label>
+<input id="target" type="number" required>
+
+<label>Deadline</label>
+<input id="deadline" type="date" required>
+
+<label>Image (optional)</label>
+<input id="image" type="file">
+
+<button type="submit" class="create-btn">Create Campaign</button>
+
+</form>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+<script src="../app.js"></script>
+
+</body>
+</html>

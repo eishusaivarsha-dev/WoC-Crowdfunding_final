@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700;900&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:Inter}
+body{
+background:linear-gradient(135deg,#ecfdf5,#dcfce7);
+min-height:100vh;
+}
+
+/* NAV */
+
+.navbar{
+position:fixed;
+top:0;
+width:100%;
+padding:20px 60px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+background:rgba(255,255,255,.75);
+backdrop-filter:blur(14px);
+z-index:100;
+}
+
+.logo{
+font-weight:900;
+color:#16a34a;
+font-size:22px;
+}
+
+.nav-links{
+display:flex;
+gap:28px;
+align-items:center;
+}
+
+.nav-links a{
+text-decoration:none;
+color:#333;
+font-weight:500;
+}
+
+.login-btn{
+padding:10px 22px;
+border:none;
+border-radius:999px;
+background:#16a34a;
+color:white;
+cursor:pointer;
+}
+
+/* PAGE */
+
+.dashboard{
+padding:140px 60px 60px;
+max-width:1200px;
+margin:auto;
+}
+
+/* STAT CARDS */
+
+.stats{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:24px;
+margin-bottom:40px;
+}
+
+.stat{
+background:white;
+padding:30px;
+border-radius:20px;
+box-shadow:0 10px 30px rgba(0,0,0,.08);
+animation:fadeUp 1s ease;
+}
+
+.stat h3{
+font-size:14px;
+color:#777;
+margin-bottom:8px;
+}
+
+.stat span{
+font-size:34px;
+font-weight:900;
+color:#16a34a;
+}
+
+/* CHARTS */
+
+.charts{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:30px;
+margin-bottom:50px;
+}
+
+.chart-card{
+background:white;
+padding:30px;
+border-radius:20px;
+box-shadow:0 10px 30px rgba(0,0,0,.08);
+}
+
+/* CAMPAIGNS */
+
+.campaigns{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:24px;
+}
+
+.card{
+background:white;
+border-radius:18px;
+padding:20px;
+box-shadow:0 10px 30px rgba(0,0,0,.08);
+transition:.3s;
+}
+
+.card:hover{transform:translateY(-6px)}
+
+.progress{
+height:8px;
+background:#eee;
+border-radius:6px;
+margin:10px 0;
+}
+
+.fill{
+height:8px;
+background:#16a34a;
+border-radius:6px;
+}
+
+/* animation */
+
+@keyframes fadeUp{
+from{opacity:0;transform:translateY(40px)}
+to{opacity:1;transform:translateY(0)}
+}
+
+/* mobile */
+
+@media(max-width:900px){
+.stats{grid-template-columns:1fr}
+.charts{grid-template-columns:1fr}
+.campaigns{grid-template-columns:1fr}
+}
+</style>
+</head>
+
+<body>
+
+<nav class="navbar">
+<div class="logo">Crowdfund</div>
+<div class="nav-links">
+<a href="../index.html">Home</a>
+<a href="create.html">Create</a>
+<button class="login-btn" onclick="logout()">Logout</button>
+</div>
+</nav>
+
+<div class="dashboard">
+
+<h2 style="margin-bottom:30px">Your Dashboard</h2>
+
+<!-- stats -->
+<div class="stats">
+
+<div class="stat">
+<h3>Total Campaigns</h3>
+<span id="totalCampaigns">0</span>
+</div>
+
+<div class="stat">
+<h3>Total Raised</h3>
+<span>₹<span id="totalRaised">0</span></span>
+</div>
+
+<div class="stat">
+<h3>Active Campaigns</h3>
+<span id="activeCampaigns">0</span>
+</div>
+
+</div>
+
+/*<!-- charts -->
+<div class="charts">
+
+<div class="chart-card">
+<h3 style="margin-bottom:10px">Funding Growth</h3>
+<canvas id="growthChart"></canvas>
+</div>
+
+<div class="chart-card">
+<h3 style="margin-bottom:10px">Campaign Distribution</h3>
+<canvas id="distributionChart"></canvas>
+</div>
+
+</div>
+
+<h3 style="margin-bottom:20px">Your Campaigns</h3>
+<div id="dashboardCampaigns" class="campaigns"></div>
+
+</div>
+*/
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+<script src="../app.js"></script>
+
+<script>
+/* Example placeholder analytics data — replace with Firebase later */
+
+const growthChart = new Chart(document.getElementById('growthChart'),{
+type:'line',
+data:{
+labels:['Week 1','Week 2','Week 3','Week 4'],
+datasets:[{
+label:'Funds Raised',
+data:[2000,4500,7000,11000],
+borderWidth:3,
+fill:false
+}]
+}
+});
+
+const distributionChart = new Chart(document.getElementById('distributionChart'),{
+type:'doughnut',
+data:{
+labels:['Education','Medical','Relief'],
+datasets:[{
+data:[40,35,25]
+}]
+}
+});
+</script>
+
+</body>
+</html>
+
