@@ -13,6 +13,18 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+console.log("APP JS LOADED");
+
+
+// ---------------- HASH HELPER ----------------
+async function sha256(str) {
+  const buf = new TextEncoder().encode(str);
+  const hash = await crypto.subtle.digest("SHA-256", buf);
+  return Array.from(new Uint8Array(hash))
+    .map(b => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 
 // ---------------- AUTH ----------------
 let LoginMode = true;
@@ -85,61 +97,43 @@ function logout() {
 }
 
 
-// ---------------- DONATION LEDGER ----------------
-async function generateDonationHash(donor, amount, timestamp, previousHash) {
-  const raw = donor + amount + timestamp + previousHash;
-  const encoder = new TextEncoder();
-  const data = encoder.encode(raw);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const arr = Array.from(new Uint8Array(hashBuffer));
-  return arr.map(b => b.toString(16).padStart(2, "0")).join("");
+// ---------------- CREATE CAMPAIGN ----------------
+function waitForUser() {
+  return new Promise(resolve => {
+    const unsub = auth.onAuthStateChanged(user => {
+      unsub();
+      resolve(user);
+    });
+  });
 }
 
-let donationLedger = [];
-let currentCampaignId = null;
+const createForm = document.getElementById("createCampaignForm");
 
-function loadLedger(id) {
-  currentCampaignId = id;
-  const saved = localStorage.getItem(`donationLedger_${id}`);
-  donationLedger = saved ? JSON.parse(saved) : [];
-  renderTransactionLog();
-}
+if (createForm) {
+  createForm.addEventListener("submit", async e => {
+    e.preventDefault();
 
-async function recordDonation(donor, amount) {
-  const timestamp = Date.now();
-  const prev = donationLedger.length
-    ? donationLedger[donationLedger.length - 1].hash
-    : "GENESIS";
+    const user = await waitForUser();
+    if (!user) return alert("Login required");
 
-  const hash = await generateDonationHash(donor, amount, timestamp, prev);
+    const campaign = {
+      title: document.getElementById("title").value,
+      description: document.getElementById("description").value,
+      target: Number(document.getElementById("target").value),
+      raised: 0,
+      deadline: document.getElementById("deadline").value,
+      creatorId: user.uid,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
 
-  donationLedger.push({ donor, amount, timestamp, previousHash: prev, hash });
-
-  localStorage.setItem(
-    `donationLedger_${currentCampaignId}`,
-    JSON.stringify(donationLedger)
-  );
-
-  renderTransactionLog();
-}
-
-function renderTransactionLog() {
-  const container = document.getElementById("transactionLog");
-  if (!container) return;
-
-  container.innerHTML = "";
-
-  donationLedger.forEach((tx, index) => {
-    container.innerHTML += `
-      <div class="tx-card">
-        <p><strong>Transaction #${index + 1}</strong></p>
-        <p><strong>Donor:</strong> ${tx.donor}</p>
-        <p><strong>Amount:</strong> ₹${tx.amount}</p>
-        <p><strong>Time:</strong> ${new Date(tx.timestamp).toLocaleString()}</p>
-        <p class="hash"><strong>Prev Hash:</strong><br>${tx.previousHash}</p>
-        <p class="hash"><strong>Hash:</strong><br>${tx.hash}</p>
-      </div>
-    `;
+    try {
+      await db.collection("campaigns").add(campaign);
+      alert("Campaign created!");
+      createForm.reset();
+    } catch (err) {
+      console.error(err);
+      alert("Error creating campaign.");
+    }
   });
 }
 
@@ -155,39 +149,28 @@ async function loadCampaigns() {
     const snap = await db.collection("campaigns").get();
     container.innerHTML = "";
 
-    if (snap.empty) {
-      container.innerHTML = "<p>No campaigns yet.</p>";
-      return;
-    }
+    if (snap.empty) return container.innerHTML = "<p>No campaigns yet.</p>";
 
     snap.forEach(doc => {
       const c = doc.data();
-
-      const title = c.title || "Campaign";
-      const raised = c.raised || 0;
-      const target = c.target || 1;
-      const percent = (raised / target) * 100;
-
-      const img =
-        `https://source.unsplash.com/600x400/?${encodeURIComponent(title)}`;
+      const percent = (c.raised / (c.target || 1)) * 100;
+      const img = `https://source.unsplash.com/600x400/?${encodeURIComponent(c.title)}`;
 
       container.innerHTML += `
         <div class="campaign-card">
           <img src="${img}">
           <div class="card-content">
-            <h3>${title}</h3>
+            <h3>${c.title}</h3>
             <div class="progress-bar">
               <div class="progress" style="width:${percent}%"></div>
             </div>
-            <p>₹${raised} of ₹${target}</p>
+            <p>₹${c.raised} of ₹${c.target}</p>
             <button onclick="viewCampaign('${doc.id}')">View Campaign</button>
           </div>
-        </div>
-      `;
+        </div>`;
     });
 
-  } catch (err) {
-    console.error(err);
+  } catch {
     container.innerHTML = "<p>Failed to load campaigns.</p>";
   }
 }
@@ -197,95 +180,15 @@ function viewCampaign(id) {
 }
 
 
-// ---------------- DASHBOARD ----------------
-function loadDashboard() {
-  const container = document.getElementById("dashboardCampaigns");
-  if (!container) return;
-
-  auth.onAuthStateChanged(async user => {
-    if (!user) {
-      container.innerHTML = "<p>Please login to view dashboard.</p>";
-      return;
-    }
-
-    container.innerHTML = "<p>Loading...</p>";
-
-    const snapshot = await db
-      .collection("campaigns")
-      .where("creatorId", "==", user.uid)
-      .get();
-
-    container.innerHTML = "";
-
-    let total = 0;
-    let labels = [];
-    let values = [];
-
-    snapshot.forEach(doc => {
-      const c = doc.data();
-      total += c.raised || 0;
-
-      labels.push(c.title);
-      values.push(c.raised);
-
-      container.innerHTML += `
-        <div class="campaign-card">
-          <h3>${c.title}</h3>
-          <p>₹${c.raised} of ₹${c.target}</p>
-        </div>
-      `;
-    });
-
-    document.getElementById("totalCampaigns").innerText = snapshot.size;
-    document.getElementById("totalRaised").innerText = total;
-
-    renderCharts(labels, values);
-  });
-}
-function renderCharts(labels, values) {
-
-  const ctx1 = document.getElementById("campaignChart");
-  const ctx2 = document.getElementById("moneyChart");
-
-  if (!ctx1 || !ctx2) return;
-
-  new Chart(ctx1, {
-    type: "bar",
-    data: {
-      labels: labels,
-      datasets: [{
-        label: "Funds Raised",
-        data: values
-      }]
-    }
-  });
-
-  new Chart(ctx2, {
-    type: "pie",
-    data: {
-      labels: labels,
-      datasets: [{
-        data: values
-      }]
-    }
-  });
-}
-
-// ---------------- SAFE PAGE LOADER ----------------
-document.addEventListener("DOMContentLoaded", async () => {
-
-  loadCampaigns();
-  loadDashboard();
-
+// ---------------- CAMPAIGN PAGE ----------------
+// ---------------- CAMPAIGN PAGE ----------------
+async function loadCampaignPage() {
   const donateBtn = document.getElementById("donateBtn");
   const donateInput = document.getElementById("donateAmount");
-
   if (!donateBtn || !donateInput) return;
 
   const id = new URLSearchParams(window.location.search).get("id");
   if (!id) return;
-
-  loadLedger(id);
 
   const ref = db.collection("campaigns").doc(id);
   const doc = await ref.get();
@@ -293,6 +196,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   const c = doc.data();
 
+  // restore all UI fields
   document.getElementById("cTitle").innerText = c.title;
   document.getElementById("cDesc").innerText = c.description;
   document.getElementById("campRaised").innerText = c.raised;
@@ -303,16 +207,44 @@ document.addEventListener("DOMContentLoaded", async () => {
   const percent = c.target > 0 ? (c.raised / c.target) * 100 : 0;
   document.getElementById("campProgress").style.width = percent + "%";
 
+  await loadTransactions(id);
+
   donateBtn.addEventListener("click", async () => {
     const amt = Number(donateInput.value);
     if (!amt || amt <= 0) return;
+
+    const snap = await db.collection("transactions")
+      .where("campaignId", "==", id)
+      .get();
+
+    let txNumber = 1;
+    let prevHash = "GENESIS";
+
+    if (!snap.empty) {
+      const list = snap.docs.map(d => d.data())
+        .sort((a,b)=>(a.txNumber||0)-(b.txNumber||0));
+      const last = list[list.length-1];
+      txNumber = (last.txNumber||0)+1;
+      prevHash = last.hash || "GENESIS";
+    }
+
+    const hash = await sha256(id + amt + Date.now() + prevHash);
 
     await ref.update({
       raised: firebase.firestore.FieldValue.increment(amt)
     });
 
-    await recordDonation("anon", amt);
+    await db.collection("transactions").add({
+      campaignId: id,
+      donor: "anon",
+      amount: amt,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+      txNumber,
+      previousHash: prevHash,
+      hash
+    });
 
+    // refresh UI after donation
     const updated = (await ref.get()).data();
 
     document.getElementById("campRaised").innerText = updated.raised;
@@ -323,8 +255,97 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     document.getElementById("campProgress").style.width = p + "%";
 
-    alert("Donation successful ❤️");
+    alert("Donation recorded on blockchain ✅");
+
+    await loadTransactions(id);
   });
+}
 
+
+// ---------------- TRANSACTION LOG + TAMPER CHECK ----------------
+async function loadTransactions(campaignId) {
+  const container = document.getElementById("transactionLog");
+  if (!container) return;
+
+  const snap = await db.collection("transactions")
+    .where("campaignId", "==", campaignId)
+    .get();
+
+  container.innerHTML = "";
+
+  const list = snap.docs
+    .map(d => d.data())
+    .sort((a,b)=> (a.txNumber||0)-(b.txNumber||0));
+
+  if (!list.length) {
+    container.innerHTML = "<p>No transactions yet.</p>";
+    return;
+  }
+
+  let tampered = false;
+
+  for (let i=1;i<list.length;i++){
+    if(list[i].previousHash !== list[i-1].hash){
+      tampered = true;
+      break;
+    }
+  }
+
+  if(tampered){
+    container.innerHTML +=
+      `<p style="color:red;font-weight:bold">
+        ⚠ Blockchain tampered! Ledger integrity broken.
+      </p>`;
+  }
+
+  list.forEach(tx=>{
+    container.innerHTML += `
+      <div class="tx-card">
+        <p><strong>Transaction #${tx.txNumber}</strong></p>
+        <p><strong>Donor:</strong> ${tx.donor}</p>
+        <p><strong>Amount:</strong> ₹${tx.amount}</p>
+        <p><strong>Prev Hash:</strong><br>${tx.previousHash}</p>
+        <p><strong>Hash:</strong><br>${tx.hash}</p>
+      </div>`;
+  });
+}
+
+
+// ---------------- DASHBOARD ----------------
+async function loadDashboard() {
+  const container = document.getElementById("dashboardCampaigns");
+  if (!container) return;
+
+  auth.onAuthStateChanged(async user => {
+    if (!user) return container.innerHTML = "<p>Please login.</p>";
+
+    const snap = await db.collection("campaigns")
+      .where("creatorId", "==", user.uid)
+      .get();
+
+    container.innerHTML = "";
+    let total = 0;
+
+    snap.forEach(doc => {
+      const c = doc.data();
+      total += c.raised || 0;
+
+      container.innerHTML += `
+        <div class="campaign-card">
+          <h3>${c.title}</h3>
+          <p>₹${c.raised} of ₹${c.target}</p>
+        </div>`;
+    });
+
+    document.getElementById("totalCampaigns").innerText = snap.size;
+    document.getElementById("totalRaised").innerText = total;
+  });
+}
+
+
+// ---------------- PAGE LOADER ----------------
+document.addEventListener("DOMContentLoaded", () => {
+  loadCampaigns();
+  loadDashboard();
+  loadCampaignPage();
 });
-
